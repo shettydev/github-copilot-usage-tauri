@@ -164,7 +164,17 @@ pub async fn start_token_server(token: String, port: u16) -> Result<String, Stri
     Ok(server_url)
 }
 
+/// Escape HTML special characters to prevent XSS
+fn html_escape(s: &str) -> String {
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&#39;")
+}
+
 fn get_token_page(token: &str) -> String {
+    let escaped_token = html_escape(token);
     format!(r#"<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -313,5 +323,5 @@ fn get_token_page(token: &str) -> String {
         }}
     </script>
 </body>
-</html>"#, token)
+</html>"#, escaped_token)
 }
