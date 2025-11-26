@@ -3,7 +3,6 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import { TrayProvider } from './contexts/TrayContext';
 import { Menu } from "@tauri-apps/api/menu";
-import { defaultWindowIcon } from "@tauri-apps/api/app";
 import { TrayIcon } from "@tauri-apps/api/tray";
 import { invoke } from "@tauri-apps/api/core";
 
@@ -27,13 +26,11 @@ import { invoke } from "@tauri-apps/api/core";
     ],
   });
 
-  // const icon = await defaultWindowIcon();
   const options = {
     id: 'main',
     title: 'GitHub Copilot Usage',
     menu,
     menuOnLeftClick: true,
-    // ...(icon ? { icon } : {}),
   };
 
   const tray = await TrayIcon.new(options);

@@ -68,11 +68,6 @@ function App() {
     }
   };
 
-  const handleCloseWindow = async () => {
-    await invoke('close_window');
-  };
-
-
   const premiumPercentage = useMemo(() => {
     const value = usage ? calculatePercentage(usage.premium_requests_used, usage.premium_requests_limit) : 0;
     return value;
