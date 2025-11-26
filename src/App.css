@@ -1,0 +1,181 @@
+:root {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+    Ubuntu, Cantarell, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color: #213547;
+  background-color: #ffffff;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 520px;
+  margin: 30px auto;
+  padding: 28px;
+  box-shadow: 0 8px 30px rgba(33, 53, 71, 0.08);
+  border-radius: 12px;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+}
+
+h1 {
+  font-size: 22px;
+  margin: 0 0 18px 0;
+  text-align: center;
+  color: #0f1720;
+  font-weight: 700;
+}
+
+h2 {
+  font-size: 16px;
+  margin: 0 0 10px 0;
+  color: #333;
+}
+
+.status {
+  text-align: center;
+  padding: 10px;
+  color: #475569;
+}
+
+.error {
+  background-color: #fee;
+  color: #c33;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+  font-size: 14px;
+}
+
+.token-setup {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.token-setup p {
+  margin: 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.token-input {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: monospace;
+}
+
+.usage-section {
+  margin-bottom: 22px;
+  padding: 8px 6px 0 6px;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 18px;
+  background-color: #eef2f7;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 10px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.progress-fill {
+  height: 100%;
+  transition: width 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.progress-fill.premium {
+  background: linear-gradient(90deg, #6b8cff 0%, #9b6bcb 60%);
+}
+
+.progress-fill.standard {
+  background: linear-gradient(90deg, #7ee8fa 0%, #80ff72 100%);
+}
+
+.usage-text {
+  font-size: 14px;
+  color: #475569;
+  text-align: center;
+}
+
+.billing-info {
+  background-color: #fbfbfe;
+  padding: 14px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  border: 1px solid rgba(16, 24, 40, 0.03);
+}
+
+.billing-info p {
+  margin: 0;
+  font-size: 13px;
+  color: #334155;
+  text-align: center;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+button {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: linear-gradient(90deg, #5560f6 0%, #7b5cf2 100%);
+  color: #fff;
+  box-shadow: 0 6px 18px rgba(86, 95, 255, 0.12);
+}
+
+.btn-secondary {
+  background: #f1f5f9;
+  color: #0f1720;
+  border: 1px solid rgba(15, 23, 32, 0.04);
+}
+
+.display-options {
+  margin-bottom: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #334155;
+  font-size: 13px;
+}
+
+.display-options input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+}

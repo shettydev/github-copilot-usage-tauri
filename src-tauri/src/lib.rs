@@ -1,0 +1,67 @@
+use tauri::image::Image as TauriImage;
+
+#[tauri::command]
+async fn fetch_copilot_usage(token: String) -> Result<String, String> {
+    let client = reqwest::Client::new();
+    
+    let response = client
+        .get("https://api.github.com/copilot_internal/user")
+        .header("Authorization", format!("Bearer {}", token))
+        .header("User-Agent", "GitHub-Copilot-Usage-Tray")
+        .header("X-GitHub-Api-Version", "2025-05-01")
+        .header("Accept", "application/json")
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+    
+    if !response.status().is_success() {
+        return Err(format!("API request failed: {}", response.status()));
+    }
+    
+    let body = response.text().await.map_err(|e| e.to_string())?;
+    Ok(body)
+}
+
+#[tauri::command]
+fn close_app() {
+    // Exit the application with success code 0
+    std::process::exit(0);
+}
+
+#[tauri::command]
+fn show_window(window: tauri::Window) {
+    let _ = window.show();
+    let _ = window.set_focus();
+}
+
+#[tauri::command]
+fn close_window(window: tauri::Window) {
+    // Hide the window instead of closing it, so the app runs in the background
+    let _ = window.hide();
+}
+
+#[tauri::command]
+fn set_tray_icon(app: tauri::AppHandle) -> Result<(), String> {
+    // Use tauri's Image helper to build an Image from PNG/ICO bytes
+    let bytes = include_bytes!("../tray-icon.png");
+    let img = TauriImage::from_bytes(bytes).map_err(|e| format!("failed to create tauri image: {}", e))?;
+
+    let tray = app.tray_by_id("main").ok_or("Tray not found")?;
+    tray.set_icon(Some(img)).map_err(|e| format!("Failed to set tray icon: {e}"))
+}
+
+#[cfg_attr(mobile, tauri::mobile_entry_point)]
+pub fn run() {
+    tauri::Builder::default()
+        .plugin(tauri_plugin_opener::init())
+        .invoke_handler(tauri::generate_handler![fetch_copilot_usage, show_window, close_window, close_app, set_tray_icon])
+        .on_window_event(|window, event| {
+            // Intercept window close events: hide instead of close
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                api.prevent_close();
+                let _ = window.hide();
+            }
+        })
+        .run(tauri::generate_context!())
+        .expect("error while running tauri application");
+}
