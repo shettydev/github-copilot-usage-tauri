@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "github-copilot-usage",
+  "productName": "GitHub Copilot Usage",
   "version": "0.1.0",
   "identifier": "com.eliostruyf.github-copilot-usage",
   "build": {
