@@ -11,11 +11,10 @@ export async function startAuthFlow(): Promise<AuthFlowState> {
   return await invoke<AuthFlowState>("start_auth_flow");
 }
 
-export async function completeAuthFlow(
-  device_code: string,
-  interval: number
-): Promise<string> {
-  return await invoke<string>("complete_auth_flow", { device_code, interval });
+export async function completeAuthFlow(device_code: string): Promise<string> {
+  return await invoke<string>("complete_auth_flow", {
+    deviceCode: device_code,
+  });
 }
 
 export async function closeAuthServer(): Promise<void> {

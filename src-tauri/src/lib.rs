@@ -37,12 +37,6 @@ fn show_window(window: tauri::Window) {
 }
 
 #[tauri::command]
-fn close_window(window: tauri::Window) {
-    // Hide the window instead of closing it, so the app runs in the background
-    let _ = window.hide();
-}
-
-#[tauri::command]
 fn set_tray_icon(app: tauri::AppHandle) -> Result<(), String> {
     // Use tauri's Image helper to build an Image from PNG/ICO bytes
     let bytes = include_bytes!("../tray-icon.png");
@@ -57,7 +51,8 @@ fn set_tray_icon(app: tauri::AppHandle) -> Result<(), String> {
 #[tauri::command]
 async fn start_auth_flow() -> Result<auth::AuthFlowState, String> {
     let device_code_response = auth::request_device_code().await?;
-    
+    eprintln!("Device code response: {:?}", device_code_response);
+
     Ok(auth::AuthFlowState {
         user_code: device_code_response.user_code,
         verification_uri: device_code_response.verification_uri,
@@ -66,26 +61,13 @@ async fn start_auth_flow() -> Result<auth::AuthFlowState, String> {
     })
 }
 
-/// Poll for the access token and start a local server to display it
+/// Request access token using device code
 #[tauri::command]
-async fn complete_auth_flow(device_code: String, interval: u64) -> Result<String, String> {
-    // Poll for the access token
-    let token = auth::poll_for_token(&device_code, interval).await?;
-    
-    // Start a local server to display the token
-    let server_url = auth::start_token_server(token.clone(), auth::AUTH_SERVER_PORT).await?;
-    
-    Ok(server_url)
-}
-
-/// Close the token server
-#[tauri::command]
-async fn close_auth_server() -> Result<(), String> {
-    // Make a request to the close endpoint - ignoring errors is intentional
-    // since the server might not be running or already closed
-    let client = reqwest::Client::new();
-    let _ = client.get(format!("http://127.0.0.1:{}/close", auth::AUTH_SERVER_PORT)).send().await;
-    Ok(())
+async fn complete_auth_flow(deviceCode: String) -> Result<String, String> {
+    println!("complete_auth_flow called with device_code: {}", deviceCode);
+    eprintln!("Device code: {:?}", &deviceCode);
+    let token = auth::request_token(&deviceCode).await?;
+    Ok(token)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -94,13 +76,11 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             fetch_copilot_usage, 
-            show_window, 
-            close_window, 
+            show_window,
             close_app, 
             set_tray_icon,
             start_auth_flow,
-            complete_auth_flow,
-            close_auth_server
+            complete_auth_flow
         ])
         .on_window_event(|window, event| {
             // Intercept window close events: hide instead of close
