@@ -98,7 +98,7 @@ export const TrayProvider: React.FC<{ tray: TrayIcon | null; children?: React.Re
       const menu = await Menu.new({ items });
       await targetTray.setMenu(menu);
     } catch (e) {
-      console.debug('updateMenu error', e);
+      console.debug('Failed to update tray menu:', e);
     }
   }, [tray]);
 
