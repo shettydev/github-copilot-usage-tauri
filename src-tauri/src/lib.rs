@@ -1,4 +1,5 @@
 use tauri::image::Image as TauriImage;
+use tauri_plugin_autostart::{MacosLauncher, ManagerExt};
 
 mod auth;
 
@@ -71,17 +72,39 @@ async fn complete_auth_flow(deviceCode: String) -> Result<String, String> {
     Ok(token)
 }
 
+#[tauri::command]
+async fn is_autostart_enabled(app: tauri::AppHandle) -> Result<bool, String> {
+    let autostart = app.autolaunch();
+    autostart.is_enabled().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn enable_autostart(app: tauri::AppHandle) -> Result<(), String> {
+    let autostart = app.autolaunch();
+    autostart.enable().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn disable_autostart(app: tauri::AppHandle) -> Result<(), String> {
+    let autostart = app.autolaunch();
+    autostart.disable().map_err(|e| e.to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_autostart::init(MacosLauncher::LaunchAgent, Some(vec!["--minimized"])))
         .invoke_handler(tauri::generate_handler![
             fetch_copilot_usage, 
             show_window,
             close_app, 
             set_tray_icon,
             start_auth_flow,
-            complete_auth_flow
+            complete_auth_flow,
+            is_autostart_enabled,
+            enable_autostart,
+            disable_autostart
         ])
         .on_window_event(|window, event| {
             // Intercept window close events: hide instead of close

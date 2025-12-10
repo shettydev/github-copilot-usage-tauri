@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useCallback, useEffect, useState } from 'react';
 import { TrayIcon } from '@tauri-apps/api/tray';
-import { Menu, MenuItemOptions, PredefinedMenuItemOptions } from '@tauri-apps/api/menu';
+import { Menu, MenuItemOptions, PredefinedMenuItemOptions, CheckMenuItemOptions } from '@tauri-apps/api/menu';
 import { invoke } from '@tauri-apps/api/core';
 
 type UsageInfo = {
@@ -25,6 +25,33 @@ export const useTray = (): TrayContextType => {
 };
 
 export const TrayProvider: React.FC<{ tray: TrayIcon | null; children?: React.ReactNode }> = ({ tray, children }) => {
+  const [autostartEnabled, setAutostartEnabled] = useState(false);
+
+  useEffect(() => {
+    const checkAutostart = async () => {
+      try {
+        const enabled = await invoke<boolean>('is_autostart_enabled');
+        setAutostartEnabled(enabled);
+      } catch (e) {
+        console.debug('Failed to check autostart status:', e);
+      }
+    };
+    checkAutostart();
+  }, []);
+
+  const toggleAutostart = useCallback(async () => {
+    try {
+      if (autostartEnabled) {
+        await invoke('disable_autostart');
+        setAutostartEnabled(false);
+      } else {
+        await invoke('enable_autostart');
+        setAutostartEnabled(true);
+      }
+    } catch (e) {
+      console.error('Failed to toggle autostart:', e);
+    }
+  }, [autostartEnabled]);
 
   const setText = useCallback(async (text?: string) => {
     try {
@@ -53,7 +80,7 @@ export const TrayProvider: React.FC<{ tray: TrayIcon | null; children?: React.Re
       const targetTray = tray ?? await TrayIcon.getById('main');
       if (!targetTray) return;
 
-      const items: Array<MenuItemOptions | PredefinedMenuItemOptions> = [];
+      const items: Array<MenuItemOptions | PredefinedMenuItemOptions | CheckMenuItemOptions> = [];
 
       if (usage) {
         items.push(
@@ -87,6 +114,18 @@ export const TrayProvider: React.FC<{ tray: TrayIcon | null; children?: React.Re
           },
         },
         {
+          item: 'Separator',
+        },
+        {
+          id: 'autostart',
+          text: 'Start at Login',
+          checked: autostartEnabled,
+          action: toggleAutostart,
+        } as CheckMenuItemOptions,
+        {
+          item: 'Separator',
+        },
+        {
           id: 'quit',
           text: 'Quit',
           action: () => {
@@ -100,7 +139,7 @@ export const TrayProvider: React.FC<{ tray: TrayIcon | null; children?: React.Re
     } catch (e) {
       console.debug('Failed to update tray menu:', e);
     }
-  }, [tray]);
+  }, [tray, autostartEnabled, toggleAutostart]);
 
   useEffect(() => {
     invoke('set_tray_icon');
