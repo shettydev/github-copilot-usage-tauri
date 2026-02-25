@@ -25,6 +25,22 @@ metered usage with real-time percentage bars for Premium requests.
 - GitHub account with Copilot access (for automated authentication) or a
   Personal Access Token
 
+If Rust is installed via `rustup`, make sure a toolchain is configured before
+running Tauri:
+
+```bash
+rustup default stable
+```
+
+Optional (repo-local instead of changing your global default):
+
+```bash
+rustup override set stable
+```
+
+If no toolchain is configured, `tauri dev` fails while running `cargo metadata`
+with an error like `rustup could not choose a version of cargo to run`.
+
 ### Linux (Ubuntu/Debian)
 
 Tauri on Linux requires a few system libraries (GTK + WebKit) for the Rust
