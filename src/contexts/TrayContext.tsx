@@ -13,7 +13,7 @@ type TrayContextType = {
   setText: (text?: string) => Promise<void>;
   close: () => Promise<void>;
   tray: TrayIcon | null;
-  updateMenu: (usage: UsageInfo | null) => Promise<void>;
+  updateMenu: (usage: UsageInfo | null, onRefresh?: () => void) => Promise<void>;
 };
 
 const TrayContext = createContext<TrayContextType | null>(null);
@@ -75,7 +75,7 @@ export const TrayProvider: React.FC<{ tray: TrayIcon | null; children?: React.Re
     found?.close();
   }, []);
 
-  const updateMenu = useCallback(async (usage: UsageInfo | null) => {
+  const updateMenu = useCallback(async (usage: UsageInfo | null, onRefresh?: () => void) => {
     try {
       const targetTray = tray ?? await TrayIcon.getById('main');
       if (!targetTray) return;
@@ -106,6 +106,14 @@ export const TrayProvider: React.FC<{ tray: TrayIcon | null; children?: React.Re
       }
 
       items.push(
+        {
+          id: 'refresh',
+          text: 'Refresh Now',
+          action: onRefresh ?? (() => {}),
+        },
+        {
+          item: 'Separator',
+        },
         {
           id: 'show',
           text: 'Show App',

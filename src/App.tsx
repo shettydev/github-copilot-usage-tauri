@@ -1,11 +1,14 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { fetchCopilotUsage, calculatePercentage, getStoredToken, storeToken } from './services/copilot';
 import { startAuthFlow, completeAuthFlow, closeAuthServer } from './services/auth';
 import { openUrl } from '@tauri-apps/plugin-opener';
+import { sendNotification } from '@tauri-apps/plugin-notification';
 import type { CopilotUsage } from './types';
 import './App.css';
 import { useTray } from './contexts/TrayContext';
 import ProgressBar from './components/ProgressBar';
+
+const REFRESH_OPTIONS = [1, 5, 15, 30];
 
 function App() {
   const [userCode, setUserCode] = useState<string>('');
@@ -22,6 +25,11 @@ function App() {
   const [showPercent, setShowPercent] = useState<boolean>(() => {
     const v = localStorage.getItem('showPercent');
     return v === null ? true : v === '1';
+  });
+  const [refreshInterval, setRefreshInterval] = useState<number>(() => {
+    const v = localStorage.getItem('refreshInterval');
+    const n = v ? parseInt(v, 10) : 5;
+    return REFRESH_OPTIONS.includes(n) ? n : 5;
   });
 
   // Auth flow state
@@ -48,10 +56,24 @@ function App() {
 
     const interval = setInterval(() => {
       loadUsage(token);
-    }, 5 * 60 * 1000);
+    }, refreshInterval * 60 * 1000);
 
     return () => clearInterval(interval);
-  }, [hasToken, token]);
+  }, [hasToken, token, refreshInterval]);
+
+  const checkAndNotify = (data: CopilotUsage) => {
+    const pct = calculatePercentage(data.premium_requests_used, data.premium_requests_limit);
+    const key = data.billing_cycle_end;
+    const k90 = `notified_90_${key}`;
+    const k80 = `notified_80_${key}`;
+    if (pct >= 90 && !localStorage.getItem(k90)) {
+      sendNotification({ title: 'Copilot Quota Alert', body: `90% of premium requests used (${data.premium_requests_used}/${data.premium_requests_limit})` });
+      localStorage.setItem(k90, '1');
+    } else if (pct >= 80 && !localStorage.getItem(k80)) {
+      sendNotification({ title: 'Copilot Quota Alert', body: `80% of premium requests used (${data.premium_requests_used}/${data.premium_requests_limit})` });
+      localStorage.setItem(k80, '1');
+    }
+  };
 
   const loadUsage = async (authToken: string) => {
     setLoading(true);
@@ -59,6 +81,7 @@ function App() {
     try {
       const data = await fetchCopilotUsage(authToken);
       setUsage(data);
+      checkAndNotify(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch usage data');
     } finally {
@@ -81,11 +104,11 @@ function App() {
     }
   };
 
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(() => {
     if (token) {
       loadUsage(token);
     }
-  };
+  }, [token]);
 
   const startPollingForToken = async (
     deviceCode: string,
@@ -180,17 +203,21 @@ function App() {
   }, [showPercent]);
 
   useEffect(() => {
+    localStorage.setItem('refreshInterval', String(refreshInterval));
+  }, [refreshInterval]);
+
+  useEffect(() => {
     if (usage) {
       const remaining = usage.premium_requests_limit - usage.premium_requests_used;
       updateMenu({
         premiumUsed: usage.premium_requests_used,
         premiumLimit: usage.premium_requests_limit,
         premiumRemaining: remaining,
-      });
+      }, handleRefresh);
     } else {
-      updateMenu(null);
+      updateMenu(null, handleRefresh);
     }
-  }, [usage, updateMenu]);
+  }, [usage, updateMenu, handleRefresh]);
 
   if (!hasToken) {
     return (
@@ -264,6 +291,14 @@ function App() {
           <div className="display-options">
             <label><input type="checkbox" checked={showBar} onChange={(e) => setShowBar(e.target.checked)} /> Show bar</label>
             <label style={{ marginLeft: 12 }}><input type="checkbox" checked={showPercent} onChange={(e) => setShowPercent(e.target.checked)} /> Show percent</label>
+            <label style={{ marginLeft: 12 }}>
+              Auto-refresh:{' '}
+              <select value={refreshInterval} onChange={e => setRefreshInterval(Number(e.target.value))}>
+                {REFRESH_OPTIONS.map(m => (
+                  <option key={m} value={m}>{m === 1 ? '1 min' : `${m} mins`}</option>
+                ))}
+              </select>
+            </label>
           </div>
 
           <div className="billing-info">
