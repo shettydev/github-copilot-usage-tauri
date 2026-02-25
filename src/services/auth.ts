@@ -13,7 +13,7 @@ export async function startAuthFlow(): Promise<AuthFlowState> {
 
 export async function completeAuthFlow(device_code: string): Promise<string> {
   return await invoke<string>("complete_auth_flow", {
-    device_code,
+    deviceCode: device_code,
   });
 }
 
