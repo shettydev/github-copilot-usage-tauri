@@ -4,9 +4,25 @@ import { Menu, MenuItemOptions, PredefinedMenuItemOptions, CheckMenuItemOptions 
 import { invoke } from '@tauri-apps/api/core';
 
 type UsageInfo = {
-  premiumUsed: number;
-  premiumLimit: number;
-  premiumRemaining: number;
+  copilot?: {
+    premiumUsed: number;
+    premiumLimit: number;
+    premiumRemaining: number;
+  };
+  claude?: {
+    mode: 'api' | 'pro';
+    label: string;
+    requestsUsed?: number;
+    requestsLimit?: number;
+    requestsRemaining?: number;
+    inputTokensUsed?: number;
+    inputTokensLimit?: number;
+    inputTokensRemaining?: number;
+    outputTokensUsed?: number;
+    outputTokensLimit?: number;
+    outputTokensRemaining?: number;
+    periodEnd?: string;
+  };
 };
 
 type TrayContextType = {
@@ -57,12 +73,12 @@ export const TrayProvider: React.FC<{ tray: TrayIcon | null; children?: React.Re
     try {
       if (tray) {
         await tray.setTitle(text ?? '');
-        await tray.setTooltip(`GitHub Copilot Usage${text ? ` - ${text}` : ''}`);
+        await tray.setTooltip(`AI Usage Tracker${text ? ` - ${text}` : ''}`);
       } else {
         // fallback: try to find the tray by id
         const found = await TrayIcon.getById('main');
         await found?.setTitle(text ?? '');
-        await found?.setTooltip(`GitHub Copilot Usage${text ? ` - ${text}` : ''}`);
+        await found?.setTooltip(`AI Usage Tracker${text ? ` - ${text}` : ''}`);
       }
     } catch (e) {
       // ignore errors when running on platforms that don't support titles
@@ -82,27 +98,82 @@ export const TrayProvider: React.FC<{ tray: TrayIcon | null; children?: React.Re
 
       const items: Array<MenuItemOptions | PredefinedMenuItemOptions | CheckMenuItemOptions> = [];
 
-      if (usage) {
+      if (usage?.copilot) {
         items.push(
           {
             id: 'usage_header',
-            text: 'Premium Requests',
+            text: 'Copilot Premium Requests',
             enabled: false,
           },
           {
             id: 'usage_used',
-            text: `  Used: ${usage.premiumUsed} / ${usage.premiumLimit}`,
+            text: `  Used: ${usage.copilot.premiumUsed} / ${usage.copilot.premiumLimit}`,
             enabled: false,
           },
           {
             id: 'usage_remaining',
-            text: `  Remaining: ${usage.premiumRemaining}`,
+            text: `  Remaining: ${usage.copilot.premiumRemaining}`,
             enabled: false,
           },
           {
             item: 'Separator',
           }
         );
+      }
+
+      if (usage?.claude) {
+        items.push(
+          {
+            id: 'claude_header',
+            text: usage.claude.label,
+            enabled: false,
+          }
+        );
+
+        if (
+          typeof usage.claude.requestsUsed === 'number' &&
+          typeof usage.claude.requestsLimit === 'number'
+        ) {
+          items.push({
+            id: 'claude_requests',
+            text: `  Requests: ${usage.claude.requestsUsed} / ${usage.claude.requestsLimit}`,
+            enabled: false,
+          });
+        }
+
+        if (
+          typeof usage.claude.inputTokensUsed === 'number' &&
+          typeof usage.claude.inputTokensLimit === 'number'
+        ) {
+          items.push({
+            id: 'claude_input_tokens',
+            text: `  Input tokens: ${usage.claude.inputTokensUsed} / ${usage.claude.inputTokensLimit}`,
+            enabled: false,
+          });
+        }
+
+        if (
+          typeof usage.claude.outputTokensUsed === 'number' &&
+          typeof usage.claude.outputTokensLimit === 'number'
+        ) {
+          items.push({
+            id: 'claude_output_tokens',
+            text: `  Output tokens: ${usage.claude.outputTokensUsed} / ${usage.claude.outputTokensLimit}`,
+            enabled: false,
+          });
+        }
+
+        if (usage.claude.periodEnd) {
+          items.push({
+            id: 'claude_period_end',
+            text: `  Period end: ${new Date(usage.claude.periodEnd).toLocaleDateString()}`,
+            enabled: false,
+          });
+        }
+
+        items.push({
+          item: 'Separator',
+        });
       }
 
       items.push(

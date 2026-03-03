@@ -2,11 +2,15 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import { TrayProvider } from './contexts/TrayContext';
+import { ProviderProvider } from './contexts/ProviderContext';
 import { Menu } from "@tauri-apps/api/menu";
 import { TrayIcon } from "@tauri-apps/api/tray";
 import { invoke } from "@tauri-apps/api/core";
+import { runMigrations } from './services/migration';
 
 (async () => {
+  runMigrations();
+
   const menu = await Menu.new({
     items: [
       {
@@ -28,7 +32,7 @@ import { invoke } from "@tauri-apps/api/core";
 
   const options = {
     id: 'main',
-    title: 'GitHub Copilot Usage',
+    title: 'AI Usage',
     menu,
     menuOnLeftClick: true,
   };
@@ -38,7 +42,9 @@ import { invoke } from "@tauri-apps/api/core";
   ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
     <React.StrictMode>
       <TrayProvider tray={tray}>
-        <App />
+        <ProviderProvider>
+          <App />
+        </ProviderProvider>
       </TrayProvider>
     </React.StrictMode>,
   );

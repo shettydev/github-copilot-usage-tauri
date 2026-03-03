@@ -2,6 +2,8 @@ use tauri::image::Image as TauriImage;
 use tauri_plugin_autostart::{MacosLauncher, ManagerExt};
 
 mod auth;
+mod claude;
+mod secrets;
 
 #[tauri::command]
 async fn fetch_copilot_usage(token: String) -> Result<String, String> {
@@ -53,7 +55,6 @@ fn set_tray_icon(app: tauri::AppHandle) -> Result<(), String> {
 #[tauri::command]
 async fn start_auth_flow() -> Result<auth::AuthFlowState, String> {
     let device_code_response = auth::request_device_code().await?;
-    eprintln!("Device code response: {:?}", device_code_response);
 
     Ok(auth::AuthFlowState {
         user_code: device_code_response.user_code,
@@ -66,10 +67,37 @@ async fn start_auth_flow() -> Result<auth::AuthFlowState, String> {
 /// Request access token using device code
 #[tauri::command]
 async fn complete_auth_flow(device_code: String) -> Result<String, String> {
-    println!("complete_auth_flow called with device_code: {}", device_code);
-    eprintln!("Device code: {:?}", &device_code);
     let token = auth::request_token(&device_code).await?;
     Ok(token)
+}
+
+#[tauri::command]
+fn close_auth_server() {
+}
+
+#[tauri::command]
+async fn validate_anthropic_key(api_key: String) -> Result<bool, String> {
+    claude::validate_anthropic_key(&api_key).await
+}
+
+#[tauri::command]
+async fn fetch_claude_rate_limits(api_key: String) -> Result<claude::ClaudeRateLimitSnapshot, String> {
+    claude::fetch_claude_rate_limits(&api_key).await
+}
+
+#[tauri::command]
+fn store_secret(service: String, key: String, value: String) -> Result<(), String> {
+    secrets::store_secret(&service, &key, &value)
+}
+
+#[tauri::command]
+fn get_secret(service: String, key: String) -> Result<Option<String>, String> {
+    secrets::get_secret(&service, &key)
+}
+
+#[tauri::command]
+fn delete_secret(service: String, key: String) -> Result<(), String> {
+    secrets::delete_secret(&service, &key)
 }
 
 #[tauri::command]
@@ -103,6 +131,12 @@ pub fn run() {
             set_tray_icon,
             start_auth_flow,
             complete_auth_flow,
+            close_auth_server,
+            validate_anthropic_key,
+            fetch_claude_rate_limits,
+            store_secret,
+            get_secret,
+            delete_secret,
             is_autostart_enabled,
             enable_autostart,
             disable_autostart

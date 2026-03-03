@@ -33,4 +33,4 @@ axum = "0.8"
 # needed to construct native tray icons at runtime
 tao = "0.34"
 image = "0.25"
-
+keyring = "2"
